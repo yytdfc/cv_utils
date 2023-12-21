@@ -1,0 +1,8 @@
+Pillow>=10.0.0
+opencv-python
+torch
+torchvision
+einops
+ffmpeg-python
+sh
+face-alignment

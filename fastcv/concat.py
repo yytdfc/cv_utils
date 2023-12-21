@@ -3,9 +3,12 @@ import numpy as np
 from PIL import Image
 import cv2
 
+from .cast import cast
+from .resize import resize
+from .utils import shape
 from .draw_text import draw_text
 
-def concat(imgs, direc="auto", mode=cv2.INTER_AREA, crop=None, labels=None, reshape=True):
+def concat(imgs, axis="auto", mode=cv2.INTER_AREA, crop=None, labels=None, reshape=True):
     if len(imgs) == 0:
         return imgs
     if isinstance(imgs[0], np.ndarray):
@@ -14,12 +17,18 @@ def concat(imgs, direc="auto", mode=cv2.INTER_AREA, crop=None, labels=None, resh
         type = "pil"
         imgs = [np.array(i) for i in imgs]
 
-    h, w, _ = imgs[0].shape
+    h, w = imgs[0].shape[:2]
     if reshape:
-        reshaped_imgs = [
-            im if im.shape[0] == h and im.shape[1] == w else cv2.resize(im, (w, h), interpolation=mode)
-            for im in imgs
-        ]
+        if (axis == "auto" and (h >= w)) or axis == "x":
+            reshaped_imgs = [
+                im if im.shape[0] == h else resize(im, h=h)
+                for im in imgs
+            ]
+        else:
+            reshaped_imgs = [
+                im if im.shape[1] == w else resize(im, w=w)
+                for im in imgs
+            ]
     else:
         reshaped_imgs = imgs
     if crop is not None:
@@ -31,7 +40,7 @@ def concat(imgs, direc="auto", mode=cv2.INTER_AREA, crop=None, labels=None, resh
     if labels is not None:
         reshaped_imgs = [draw_text(i, l, color=(0, 0, 255)) for i, l in zip(reshaped_imgs, labels)]
 
-    if (direc == "auto" and (h >= w)) or direc == "x":
+    if (axis == "auto" and (h >= w)) or axis == "x":
         concat_img = np.concatenate(reshaped_imgs, 1)
     else:
         concat_img = np.concatenate(reshaped_imgs, 0)
@@ -53,7 +62,7 @@ def get_fine_product(n):
     i = math.ceil(n / j)
     return j, i
 
-def grid_concat(images, nx=0, ny=0, board=None, reshape=True):
+def grid_concat(images, nx=0, ny=0, border_size=None, border_color=(255, 0, 0), reshape=True):
     if nx == 0 and ny == 0:
         nx, ny = get_fine_product(len(images))
     elif nx == 0:
@@ -64,11 +73,11 @@ def grid_concat(images, nx=0, ny=0, board=None, reshape=True):
     if len(images) < nx * ny:
         images.extend([np.zeros_like(images[0]) + 127] * (nx * ny - len(images)))
     rows = [
-        concat(images[i * nx : (i + 1) * nx], direc="x", reshape=reshape)
+        concat(images[i * nx : (i + 1) * nx], axis="x", reshape=reshape)
         for i in range(ny)
     ]
-    im = concat(rows, direc="y", reshape=reshape)
-    if board is not None:
-        h, w, _ = im.shape
-        im = cv2.rectangle(im, (0, 0), (w, h), (255, 0, 0), board)
+    im = concat(rows, axis="y", reshape=reshape)
+    if border_size is not None:
+        _, h, w = shape(im)
+        im = cast(cv2.rectangle(cast(im, "numpy"), (0, 0), (w, h), border_color, border_size), "pil")
     return im

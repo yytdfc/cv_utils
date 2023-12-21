@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import ffmpeg
+from ..cast import cast
 
 
 class FFmpegVideoDumper:
@@ -19,11 +20,18 @@ class FFmpegVideoDumper:
         self.w = w
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         if self.dumper is not None:
             self.dumper.stdin.close()
             self.dumper.wait()
 
+    def release(self):
+        self.close()
+
     def write(self, img):
+        img = cast(img, type="np")
         if self.dumper is None:
             self.idx = 0
             self.dumper = True
@@ -78,7 +86,7 @@ class FFmpegVideoLoader:
             scale = resize_min_size / min(self.height, self.width)
             self.width = round(self.width * scale) // 2 * 2
             self.height = round(self.height * scale) // 2 * 2
-        if round(int(video_stream["tags"].get("rotate", 0)) / 90) % 2 != 0:
+        if round(int(video_stream.get("tags", {}).get("rotate", 0)) / 90) % 2 != 0:
             self.width, self.height = self.height, self.width
 
         self.length = int(video_stream["nb_frames"])
@@ -104,9 +112,15 @@ class FFmpegVideoLoader:
         self.idx = 0
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         # reading left frames
         self.loader.stdout.close()
         self.loader.wait()
+
+    def release(self):
+        self.close()
 
     def __iter__(self):
         self.idx = 0

@@ -3,7 +3,7 @@ import os
 import cv2
 import numpy as np
 
-from .environment import ENV
+from ..environment import ENV
 
 
 class VideoDumper:
