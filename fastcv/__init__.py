@@ -1,5 +1,5 @@
-__version__ = "0.1"
-__description__ = "A cv basic library"
+__version__ = "0.1.2"
+__description__ = "A basic cv library"
 __doc__ = """
 Document:
     pass

@@ -16,6 +16,8 @@ def draw_text(
     align="top_center", 
     margin_scale=0.01, 
     color=(255, 0, 0, 255), 
+    bg_color=(0, 0, 0, 0),
+    bg_outline=(0, 0, 0, 0),
     tx=-1, 
     ty=-1, 
     text_width=80,
@@ -40,7 +42,7 @@ def draw_text(
                     text_line += " " + t
             text_lines.append(text_line)
             text = "\n".join(text_lines)
-        draw = ImageDraw.Draw(impil)
+        draw = ImageDraw.Draw(impil, "RGBA")
         if font_size == 0:
             font_size = round(min(ori_h, ori_w) * font_scale)
 
@@ -59,6 +61,10 @@ def draw_text(
         # fontStyle.getsize('test')
         h_word = font_size
         w_word = fontStyle.getlength(text)
+        # bbox = draw.textbbox((0, 0), text, font=fontStyle, stroke_width=stroke_width,spacing=spacing)
+        # h_word = bbox[3] - bbox[1]
+        # w_word = bbox[2] - bbox[0]
+        # print(bbox, h_word, w_word)
         if tx>= 0:
             pass
         elif align.endswith("left"):
@@ -79,6 +85,9 @@ def draw_text(
             # defalut center
             ty = round((ori_h - h_word) / 2)
 
+        if bg_color[3] > 0 or bg_outline[3] > 0:
+            bg_margin = round(font_size * 0.2)
+            draw.rectangle((tx - bg_margin, ty - bg_margin, tx + w_word + bg_margin, ty + h_word + bg_margin), outline=bg_outline, fill=bg_color)
         draw.text((tx, ty), text, font=fontStyle, fill=(color), stroke_width=stroke_width,spacing=spacing)
         return impil
     else:

@@ -5,8 +5,11 @@ import PIL
 from PIL import Image
 from PIL import ImageDraw
 import face_alignment
-from fastcv import VideoLoader, VideoDumper, draw_text, resize, view, cast, info, concat
-from fastcv import device
+
+from .cast import cast
+
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 __MAX_LOAD_DECTOR = 2
@@ -98,7 +101,6 @@ def ffhq_align(img, lm, output_size, scale=1.0, rotate=False):
         x = eye_to_eye - np.flipud(eye_to_mouth) * [-1, 1]
         x /= np.hypot(*x)
         x *= max(np.hypot(*eye_to_eye) * 2.0 * scale, np.hypot(*eye_to_mouth) * 1.8 * scale)
-        # x *= max(np.hypot(*eye_to_eye) * 1.5, np.hypot(*eye_to_mouth) * 1.2)
         y = np.flipud(x) * [-1, 1]
         c0 = eye_avg + eye_to_mouth * 0.1
     else:
@@ -145,7 +147,7 @@ def detect(im, detector="blazeface_back"):
     return lm
 
 
-def detect_and_align(im, output_size, rotate=False, detector="blazeface_back", prev_box=None):
+def detect_and_align(im, output_size, rotate=False, detector="blazeface_back", prev_box=None, scale=1.0):
     im = cast(im, "np")
 
     if prev_box is not None:
@@ -167,9 +169,9 @@ def detect_and_align(im, output_size, rotate=False, detector="blazeface_back", p
             l += np.array([x0, y0])
 
     if isinstance(im, list) or im.ndim == 4:
-        return [ffhq_align(i, l, output_size=output_size, rotate=rotate) if l is not None else None for i, l in zip(im, lm)]
+        return [ffhq_align(i, l, output_size=output_size, rotate=rotate, scale=scale) if l is not None else None for i, l in zip(im, lm)]
     else:
-        return ffhq_align(im, lm[0], output_size=output_size, rotate=rotate)
+        return ffhq_align(im, lm[0], output_size=output_size, rotate=rotate, scale=scale)
 
 
 def smooth_bbox(bboxs, window=5):
@@ -210,3 +212,11 @@ def get_mask_from_lm(lms, region="mouth", size=(512, 512)):
         raise ValueError(f"region {region} not support")
     mask = cv2.fillPoly(mask, np.int32([polygon]), 255)
     return mask
+
+
+if __name__ == "__main__":
+    pass
+    fa = get_face_detector("blazeface_back")
+    lm = fa.get_landmarks(np.array(Image.open("/Users/cfu/git/101_lipsync/SadTalker/examples/1 copy.png")))
+    print(lm)
+
