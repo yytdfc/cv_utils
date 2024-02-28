@@ -166,7 +166,8 @@ def detect_and_align(im, output_size, rotate=False, detector="blazeface_back", p
 
     if prev_box is not None:
         for l in lm:
-            l += np.array([x0, y0])
+            if len(l):
+                l += np.array([x0, y0])
 
     if isinstance(im, list) or im.ndim == 4:
         return [ffhq_align(i, l, output_size=output_size, rotate=rotate, scale=scale) if l is not None else None for i, l in zip(im, lm)]
