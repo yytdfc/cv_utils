@@ -120,9 +120,9 @@ def ffhq_align(img, lm, output_size, scale=1.0, rotate=False):
 
 
 def align_back(im_align, size, transform_paras):
-    im_align_back, _ = perspective_transform(im_align, [], transform_paras[1], transform_paras[0], size)
+    h, w = size
+    im_align_back, _ = perspective_transform(im_align, [], transform_paras[1], transform_paras[0], (w, h))
     # make mask with landmarks
-    w, h = size
     #  mouth_polygon = np.concatenate([preds[0][3:13], preds[0][35:31:-1]],0)
     #  print(mouth_polygon)
     mask = np.zeros((h, w), np.uint8)
